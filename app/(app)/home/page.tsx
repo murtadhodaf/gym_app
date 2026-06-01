@@ -10,11 +10,13 @@ import { CheckInButton } from "@/components/dashboard/CheckInButton";
 import { Greeting } from "@/components/dashboard/Greeting";
 import { AdjustWorkoutModal } from "@/components/workout/AdjustWorkoutModal";
 import { STATS, TODAY_WORKOUT, AdjustedWorkout } from "@/data/sample";
+import { useActiveProgramWorkout } from "@/lib/use-active-program-workout";
 import type { AdjustResponse, AdjustReason } from "@/lib/adjust-queries";
 
 export default function HomePage() {
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [adjustedWorkout, setAdjustedWorkout] = useState<AdjustedWorkout | null>(null);
+  const activeProgramWorkout = useActiveProgramWorkout();
   const [banner, setBanner] = useState<string | null>(null);
   const [heroFlash, setHeroFlash] = useState(false);
 
@@ -37,9 +39,21 @@ export default function HomePage() {
   );
 
   // Build a workout shape compatible with HeroWorkoutCard
-  const displayWorkout = adjustedWorkout
+  // Priority: 1) AI-adjusted (manual), 2) Active program today's entry, 3) Sample fallback
+  const baseWorkout = activeProgramWorkout
     ? {
         ...TODAY_WORKOUT,
+        title: activeProgramWorkout.title,
+        focus: activeProgramWorkout.focus,
+        durationMin: activeProgramWorkout.durationMin,
+        exerciseCount: activeProgramWorkout.exerciseCount,
+        exercises: activeProgramWorkout.exercises,
+      }
+    : TODAY_WORKOUT;
+
+  const displayWorkout = adjustedWorkout
+    ? {
+        ...baseWorkout,
         title: adjustedWorkout.title,
         focus: adjustedWorkout.focus,
         durationMin: adjustedWorkout.duration,
@@ -51,7 +65,7 @@ export default function HomePage() {
         aiTuned: true,
         aiTunedReason: adjustedWorkout.reasonLabel,
       }
-    : undefined;
+    : baseWorkout;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
@@ -160,7 +174,7 @@ export default function HomePage() {
 
       {/* Hero workout card */}
       <HeroWorkoutCard
-        workout={displayWorkout}
+        workout={displayWorkout as Parameters<typeof HeroWorkoutCard>[0]["workout"]}
         onAdjust={() => setAdjustOpen(true)}
         aiTuned={!!adjustedWorkout}
         aiTunedReason={adjustedWorkout?.reasonLabel}
