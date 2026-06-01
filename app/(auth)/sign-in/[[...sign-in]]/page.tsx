@@ -15,7 +15,7 @@ export default function SignInPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!isLoaded) return;
+    if (!isLoaded || !signIn) return;
     setLoading(true);
     setError("");
     try {
@@ -24,10 +24,12 @@ export default function SignInPage() {
         await setActive({ session: result.createdSessionId });
         router.push("/home");
       } else {
-        setError("Additional verification required. Please continue in Clerk.");
+        setError("Additional verification required.");
       }
     } catch (err: unknown) {
-      const msg = (err as { errors?: { message: string }[] })?.errors?.[0]?.message ?? "Invalid email or password.";
+      const msg =
+        (err as { errors?: { message: string }[] })?.errors?.[0]?.message ??
+        "Invalid email or password.";
       setError(msg);
     } finally {
       setLoading(false);
@@ -35,13 +37,36 @@ export default function SignInPage() {
   }
 
   async function handleOAuth(provider: "oauth_google" | "oauth_apple") {
-    if (!isLoaded) return;
+    if (!isLoaded || !signIn) return;
     await signIn.authenticateWithRedirect({
       strategy: provider,
       redirectUrl: "/sso-callback",
       redirectUrlComplete: "/home",
     });
   }
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "11px 14px",
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
+    borderRadius: 10,
+    fontSize: 14,
+    color: "var(--ink)",
+    outline: "none",
+    transition: "border 0.12s, box-shadow 0.12s",
+    boxSizing: "border-box",
+    fontFamily: "inherit",
+  };
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.style.borderColor = "var(--ink)";
+    e.target.style.boxShadow = "0 0 0 3px rgba(215,242,82,0.35)";
+  };
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.style.borderColor = "var(--border)";
+    e.target.style.boxShadow = "none";
+  };
 
   return (
     <div style={{ minHeight: "100vh", display: "grid", gridTemplateColumns: "1fr 1fr", background: "var(--bg)" }}>
@@ -56,7 +81,6 @@ export default function SignInPage() {
         display: "flex",
         flexDirection: "column",
       }}>
-        {/* Dual radial overlay */}
         <div style={{
           position: "absolute",
           inset: 0,
@@ -67,58 +91,30 @@ export default function SignInPage() {
           pointerEvents: "none",
         }} />
 
-        {/* Brand row */}
+        {/* Brand */}
         <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{
-            width: 28, height: 28,
-            borderRadius: 8,
-            background: "var(--accent)",
-            display: "grid",
-            placeItems: "center",
-            position: "relative",
-          }}>
-            <div style={{
-              width: 14, height: 14,
-              borderRadius: "50%",
-              background: "var(--ink)",
-              boxShadow: "inset 0 0 0 3px var(--accent)",
-            }} />
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: "var(--accent)", display: "grid", placeItems: "center" }}>
+            <div style={{ width: 14, height: 14, borderRadius: "50%", background: "var(--ink)", boxShadow: "inset 0 0 0 3px var(--accent)" }} />
           </div>
           <span style={{ fontSize: 18, fontWeight: 600, letterSpacing: "-0.02em", color: "var(--bg)" }}>
             For<em style={{ fontFamily: "var(--font-instrument)", fontStyle: "italic", fontWeight: 400 }}>ma</em>
           </span>
         </div>
 
-        {/* Art content — pushed to bottom */}
+        {/* Art content */}
         <div style={{ position: "relative", marginTop: "auto" }}>
-          <p style={{
-            fontSize: 44,
-            fontWeight: 400,
-            letterSpacing: "-0.03em",
-            lineHeight: 1.05,
-            maxWidth: 460,
-            color: "var(--bg)",
-          }}>
+          <p style={{ fontSize: 44, fontWeight: 400, letterSpacing: "-0.03em", lineHeight: 1.05, maxWidth: 460, color: "var(--bg)" }}>
             Train with <em style={{ fontFamily: "var(--font-instrument)", fontStyle: "italic" }}>intent.</em><br />
             Adapt with <em style={{ fontFamily: "var(--font-instrument)", fontStyle: "italic" }}>evidence.</em>
           </p>
-
           <p style={{ color: "rgba(242,239,229,0.55)", fontSize: 13, marginTop: 24 }}>
             Smart, adaptive fitness programs built around your body, your recovery, and your goals.
           </p>
-
-          {/* Stat strip */}
-          <div style={{
-            display: "flex",
-            gap: 20,
-            marginTop: 32,
-            paddingTop: 24,
-            borderTop: "1px solid rgba(255,255,255,0.08)",
-          }}>
+          <div style={{ display: "flex", gap: 20, marginTop: 32, paddingTop: 24, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
             {[
               { value: "2.1M+", label: "Sessions tracked" },
-              { value: "87%", label: "Hit weekly goal" },
-              { value: "4.9★", label: "App Store" },
+              { value: "87%",   label: "Hit weekly goal"  },
+              { value: "4.9★",  label: "App Store"        },
             ].map((s) => (
               <div key={s.label}>
                 <div style={{ fontSize: 22, color: "var(--accent)", fontVariantNumeric: "tabular-nums", fontWeight: 500 }}>{s.value}</div>
@@ -141,45 +137,29 @@ export default function SignInPage() {
           </p>
 
           <form onSubmit={handleSubmit}>
-            {/* Email field */}
             <div style={{ marginBottom: 14 }}>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 500, marginBottom: 6, color: "var(--ink-2)" }}>
-                Email
-              </label>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 500, marginBottom: 6, color: "var(--ink-2)" }}>Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@email.com"
                 required
-                style={{
-                  width: "100%",
-                  padding: "11px 14px",
-                  background: "var(--surface)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 10,
-                  fontSize: 14,
-                  color: "var(--ink)",
-                  outline: "none",
-                  transition: "border 0.12s, box-shadow 0.12s",
-                  boxSizing: "border-box",
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = "var(--ink)";
-                  e.target.style.boxShadow = "0 0 0 3px var(--accent)";
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = "var(--border)";
-                  e.target.style.boxShadow = "none";
-                }}
+                style={inputStyle}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </div>
 
-            {/* Password field */}
             <div style={{ marginBottom: 14 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                 <label style={{ fontSize: 12, fontWeight: 500, color: "var(--ink-2)" }}>Password</label>
-                <a href="#" style={{ color: "var(--ink-2)", fontSize: 11.5, textDecoration: "none" }}>Forgot?</a>
+                <button
+                  type="button"
+                  style={{ background: "none", border: "none", color: "var(--ink-2)", fontSize: 11.5, cursor: "pointer", padding: 0, fontFamily: "inherit" }}
+                >
+                  Forgot?
+                </button>
               </div>
               <input
                 type="password"
@@ -187,32 +167,13 @@ export default function SignInPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                style={{
-                  width: "100%",
-                  padding: "11px 14px",
-                  background: "var(--surface)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 10,
-                  fontSize: 14,
-                  color: "var(--ink)",
-                  outline: "none",
-                  transition: "border 0.12s, box-shadow 0.12s",
-                  boxSizing: "border-box",
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = "var(--ink)";
-                  e.target.style.boxShadow = "0 0 0 3px var(--accent)";
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = "var(--border)";
-                  e.target.style.boxShadow = "none";
-                }}
+                style={inputStyle}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </div>
 
-            {error && (
-              <p style={{ fontSize: 13, color: "var(--coral)", marginBottom: 10 }}>{error}</p>
-            )}
+            {error && <p style={{ fontSize: 13, color: "var(--coral)", marginBottom: 10 }}>{error}</p>}
 
             <button
               type="submit"
@@ -234,40 +195,28 @@ export default function SignInPage() {
                 cursor: loading ? "not-allowed" : "pointer",
                 opacity: loading ? 0.7 : 1,
                 transition: "background 0.12s",
+                fontFamily: "inherit",
               }}
-              onMouseEnter={(e) => { if (!loading) (e.currentTarget.style.background = "var(--accent-2)"); }}
-              onMouseLeave={(e) => { (e.currentTarget.style.background = "var(--accent)"); }}
+              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = "var(--accent-2)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "var(--accent)"; }}
             >
-              {loading ? "Signing in…" : <>Sign in <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></>}
+              {loading ? "Signing in…" : (
+                <>Sign in <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></>
+              )}
             </button>
           </form>
 
-          {/* Divider */}
-          <div style={{
-            display: "flex", alignItems: "center", gap: 12,
-            margin: "22px 0",
-            color: "var(--ink-3)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em",
-          }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "22px 0", color: "var(--ink-3)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em" }}>
             <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
             or continue with
             <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
           </div>
 
-          {/* OAuth row */}
           <div style={{ display: "flex", gap: 10 }}>
             <button
+              type="button"
               onClick={() => handleOAuth("oauth_google")}
-              style={{
-                flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                padding: 11,
-                background: "var(--surface)",
-                border: "1px solid var(--border)",
-                borderRadius: 10,
-                fontSize: 13,
-                color: "var(--ink)",
-                fontWeight: 500,
-                cursor: "pointer",
-              }}
+              style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: 11, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, fontSize: 13, color: "var(--ink)", fontWeight: 500, cursor: "pointer", fontFamily: "inherit" }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "var(--surface-2)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "var(--surface)"; }}
             >
@@ -275,18 +224,9 @@ export default function SignInPage() {
               Google
             </button>
             <button
+              type="button"
               onClick={() => handleOAuth("oauth_apple")}
-              style={{
-                flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                padding: 11,
-                background: "var(--surface)",
-                border: "1px solid var(--border)",
-                borderRadius: 10,
-                fontSize: 13,
-                color: "var(--ink)",
-                fontWeight: 500,
-                cursor: "pointer",
-              }}
+              style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: 11, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, fontSize: 13, color: "var(--ink)", fontWeight: 500, cursor: "pointer", fontFamily: "inherit" }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "var(--surface-2)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "var(--surface)"; }}
             >
@@ -295,7 +235,6 @@ export default function SignInPage() {
             </button>
           </div>
 
-          {/* Footer */}
           <p style={{ textAlign: "center", marginTop: 28, color: "var(--ink-3)", fontSize: 13 }}>
             New to Forma?{" "}
             <Link href="/sign-up" style={{ color: "var(--ink)", fontWeight: 500, textDecoration: "none" }}>

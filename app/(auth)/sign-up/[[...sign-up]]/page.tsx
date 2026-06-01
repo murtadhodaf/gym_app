@@ -17,7 +17,7 @@ export default function SignUpPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!isLoaded) return;
+    if (!isLoaded || !signUp) return;
     setLoading(true);
     setError("");
     try {
@@ -25,7 +25,9 @@ export default function SignUpPage() {
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
       setVerifying(true);
     } catch (err: unknown) {
-      const msg = (err as { errors?: { message: string }[] })?.errors?.[0]?.message ?? "Something went wrong.";
+      const msg =
+        (err as { errors?: { message: string }[] })?.errors?.[0]?.message ??
+        "Something went wrong.";
       setError(msg);
     } finally {
       setLoading(false);
@@ -34,7 +36,7 @@ export default function SignUpPage() {
 
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault();
-    if (!isLoaded) return;
+    if (!isLoaded || !signUp) return;
     setLoading(true);
     setError("");
     try {
@@ -46,7 +48,9 @@ export default function SignUpPage() {
         setError("Verification incomplete. Please try again.");
       }
     } catch (err: unknown) {
-      const msg = (err as { errors?: { message: string }[] })?.errors?.[0]?.message ?? "Invalid code.";
+      const msg =
+        (err as { errors?: { message: string }[] })?.errors?.[0]?.message ??
+        "Invalid code.";
       setError(msg);
     } finally {
       setLoading(false);
@@ -54,7 +58,7 @@ export default function SignUpPage() {
   }
 
   async function handleOAuth(provider: "oauth_google" | "oauth_apple") {
-    if (!isLoaded) return;
+    if (!isLoaded || !signUp) return;
     await signUp.authenticateWithRedirect({
       strategy: provider,
       redirectUrl: "/sso-callback",
@@ -73,24 +77,25 @@ export default function SignUpPage() {
     outline: "none",
     transition: "border 0.12s, box-shadow 0.12s",
     boxSizing: "border-box",
+    fontFamily: "inherit",
+  };
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.style.borderColor = "var(--ink)";
+    e.target.style.boxShadow = "0 0 0 3px rgba(215,242,82,0.35)";
+  };
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.style.borderColor = "var(--border)";
+    e.target.style.boxShadow = "none";
   };
 
   return (
     <div style={{ minHeight: "100vh", display: "grid", gridTemplateColumns: "1fr 1fr", background: "var(--bg)" }}>
 
       {/* ── Left: art panel ───────────────────────────────────────────── */}
-      <div style={{
-        position: "relative",
-        overflow: "hidden",
-        background: "var(--ink)",
-        color: "var(--bg)",
-        padding: "40px",
-        display: "flex",
-        flexDirection: "column",
-      }}>
+      <div style={{ position: "relative", overflow: "hidden", background: "var(--ink)", color: "var(--bg)", padding: "40px", display: "flex", flexDirection: "column" }}>
         <div style={{
-          position: "absolute",
-          inset: 0,
+          position: "absolute", inset: 0,
           background: `
             radial-gradient(circle at 80% 20%, rgba(215,242,82,0.25), transparent 50%),
             radial-gradient(circle at 20% 80%, rgba(74,107,212,0.18), transparent 50%)
@@ -98,21 +103,10 @@ export default function SignUpPage() {
           pointerEvents: "none",
         }} />
 
-        {/* Brand row */}
+        {/* Brand */}
         <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{
-            width: 28, height: 28,
-            borderRadius: 8,
-            background: "var(--accent)",
-            display: "grid",
-            placeItems: "center",
-          }}>
-            <div style={{
-              width: 14, height: 14,
-              borderRadius: "50%",
-              background: "var(--ink)",
-              boxShadow: "inset 0 0 0 3px var(--accent)",
-            }} />
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: "var(--accent)", display: "grid", placeItems: "center" }}>
+            <div style={{ width: 14, height: 14, borderRadius: "50%", background: "var(--ink)", boxShadow: "inset 0 0 0 3px var(--accent)" }} />
           </div>
           <span style={{ fontSize: 18, fontWeight: 600, letterSpacing: "-0.02em", color: "var(--bg)" }}>
             For<em style={{ fontFamily: "var(--font-instrument)", fontStyle: "italic", fontWeight: 400 }}>ma</em>
@@ -121,14 +115,7 @@ export default function SignUpPage() {
 
         {/* Art content */}
         <div style={{ position: "relative", marginTop: "auto" }}>
-          <p style={{
-            fontSize: 44,
-            fontWeight: 400,
-            letterSpacing: "-0.03em",
-            lineHeight: 1.05,
-            maxWidth: 460,
-            color: "var(--bg)",
-          }}>
+          <p style={{ fontSize: 44, fontWeight: 400, letterSpacing: "-0.03em", lineHeight: 1.05, maxWidth: 460, color: "var(--bg)" }}>
             Train with <em style={{ fontFamily: "var(--font-instrument)", fontStyle: "italic" }}>intent.</em><br />
             Adapt with <em style={{ fontFamily: "var(--font-instrument)", fontStyle: "italic" }}>evidence.</em>
           </p>
@@ -138,8 +125,8 @@ export default function SignUpPage() {
           <div style={{ display: "flex", gap: 20, marginTop: 32, paddingTop: 24, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
             {[
               { value: "2.1M+", label: "Sessions tracked" },
-              { value: "87%", label: "Hit weekly goal" },
-              { value: "4.9★", label: "App Store" },
+              { value: "87%",   label: "Hit weekly goal"  },
+              { value: "4.9★",  label: "App Store"        },
             ].map((s) => (
               <div key={s.label}>
                 <div style={{ fontSize: 22, color: "var(--accent)", fontVariantNumeric: "tabular-nums", fontWeight: 500 }}>{s.value}</div>
@@ -164,16 +151,19 @@ export default function SignUpPage() {
               </p>
               <form onSubmit={handleVerify}>
                 <div style={{ marginBottom: 14 }}>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 500, marginBottom: 6, color: "var(--ink-2)" }}>Verification code</label>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 500, marginBottom: 6, color: "var(--ink-2)" }}>
+                    Verification code
+                  </label>
                   <input
                     type="text"
+                    inputMode="numeric"
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
                     placeholder="Enter 6-digit code"
                     required
                     style={inputStyle}
-                    onFocus={(e) => { e.target.style.borderColor = "var(--ink)"; e.target.style.boxShadow = "0 0 0 3px var(--accent)"; }}
-                    onBlur={(e) => { e.target.style.borderColor = "var(--border)"; e.target.style.boxShadow = "none"; }}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
                   />
                 </div>
                 {error && <p style={{ fontSize: 13, color: "var(--coral)", marginBottom: 10 }}>{error}</p>}
@@ -188,6 +178,7 @@ export default function SignUpPage() {
                     fontSize: 15, fontWeight: 600,
                     cursor: loading ? "not-allowed" : "pointer",
                     opacity: loading ? 0.7 : 1,
+                    fontFamily: "inherit",
                   }}
                 >
                   {loading ? "Verifying…" : "Verify email →"}
@@ -206,25 +197,16 @@ export default function SignUpPage() {
               <form onSubmit={handleSubmit}>
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ display: "block", fontSize: 12, fontWeight: 500, marginBottom: 6, color: "var(--ink-2)" }}>Email</label>
-                  <input
-                    type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@email.com" required style={inputStyle}
-                    onFocus={(e) => { e.target.style.borderColor = "var(--ink)"; e.target.style.boxShadow = "0 0 0 3px var(--accent)"; }}
-                    onBlur={(e) => { e.target.style.borderColor = "var(--border)"; e.target.style.boxShadow = "none"; }}
-                  />
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" required style={inputStyle} onFocus={handleFocus} onBlur={handleBlur} />
                 </div>
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ display: "block", fontSize: 12, fontWeight: 500, marginBottom: 6, color: "var(--ink-2)" }}>Password</label>
-                  <input
-                    type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••" required style={inputStyle}
-                    onFocus={(e) => { e.target.style.borderColor = "var(--ink)"; e.target.style.boxShadow = "0 0 0 3px var(--accent)"; }}
-                    onBlur={(e) => { e.target.style.borderColor = "var(--border)"; e.target.style.boxShadow = "none"; }}
-                  />
+                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required style={inputStyle} onFocus={handleFocus} onBlur={handleBlur} />
                 </div>
                 {error && <p style={{ fontSize: 13, color: "var(--coral)", marginBottom: 10 }}>{error}</p>}
                 <button
-                  type="submit" disabled={loading}
+                  type="submit"
+                  disabled={loading}
                   style={{
                     width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                     marginTop: 10, padding: "13px 20px",
@@ -232,32 +214,34 @@ export default function SignUpPage() {
                     border: "1px solid var(--accent-2)", borderRadius: 999,
                     fontSize: 15, fontWeight: 600,
                     cursor: loading ? "not-allowed" : "pointer",
-                    opacity: loading ? 0.7 : 1,
+                    opacity: loading ? 0.7 : 1, fontFamily: "inherit",
                   }}
                   onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = "var(--accent-2)"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = "var(--accent)"; }}
                 >
-                  {loading ? "Creating account…" : <>Create account <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></>}
+                  {loading ? "Creating account…" : (
+                    <>Create account <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></>
+                  )}
                 </button>
               </form>
 
-              {/* Divider */}
               <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "22px 0", color: "var(--ink-3)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em" }}>
                 <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
                 or continue with
                 <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
               </div>
 
-              {/* OAuth */}
               <div style={{ display: "flex", gap: 10 }}>
                 {(["oauth_google", "oauth_apple"] as const).map((p) => (
                   <button
                     key={p}
+                    type="button"
                     onClick={() => handleOAuth(p)}
                     style={{
                       flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                       padding: 11, background: "var(--surface)", border: "1px solid var(--border)",
-                      borderRadius: 10, fontSize: 13, color: "var(--ink)", fontWeight: 500, cursor: "pointer",
+                      borderRadius: 10, fontSize: 13, color: "var(--ink)", fontWeight: 500,
+                      cursor: "pointer", fontFamily: "inherit",
                     }}
                     onMouseEnter={(e) => { e.currentTarget.style.background = "var(--surface-2)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = "var(--surface)"; }}
@@ -274,9 +258,7 @@ export default function SignUpPage() {
 
               <p style={{ textAlign: "center", marginTop: 28, color: "var(--ink-3)", fontSize: 13 }}>
                 Already have an account?{" "}
-                <Link href="/sign-in" style={{ color: "var(--ink)", fontWeight: 500, textDecoration: "none" }}>
-                  Sign in
-                </Link>
+                <Link href="/sign-in" style={{ color: "var(--ink)", fontWeight: 500, textDecoration: "none" }}>Sign in</Link>
               </p>
             </>
           )}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import { Providers } from "@/components/providers";
 import "./globals.css";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
@@ -22,8 +23,10 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <ClerkProvider>
-      <html lang="en" className={`${geist.variable} ${geistMono.variable} ${instrument.variable}`}>
-        <body>{children}</body>
+      <html lang="en" suppressHydrationWarning className={`${geist.variable} ${geistMono.variable} ${instrument.variable}`}>
+        <body suppressHydrationWarning>
+          <Providers>{children}</Providers>
+        </body>
       </html>
     </ClerkProvider>
   );
